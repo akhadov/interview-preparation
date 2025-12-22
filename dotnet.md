@@ -1719,3 +1719,2515 @@ foreach (var method in methods)
 </details>
 
 </details>
+
+---
+
+<details>
+<summary><strong>Entity Framework</strong></summary>
+
+### Entity Framework Basics
+
+<details>
+<summary>142. What is Entity Framework and what problems does it solve?</summary>
+
+- Object-Relational Mapper (ORM) for .NET
+- Maps database tables to C# classes and vice versa
+- Eliminates manual SQL writing for CRUD operations
+- Provides LINQ support for type-safe queries
+- Handles connection management, transactions, and change tracking
+</details>
+
+<details>
+<summary>143. What is the difference between Fluent API and Data Annotations?</summary>
+
+- **Data Annotations**: attributes on entity classes/properties
+  ```csharp
+  [Table("Products")]
+  public class Product
+  {
+      [Key]
+      public int Id { get; set; }
+      
+      [Required]
+      [MaxLength(100)]
+      public string Name { get; set; }
+  }
+  ```
+- **Fluent API**: configuration in `OnModelCreating` method
+  ```csharp
+  modelBuilder.Entity<Product>(entity =>
+  {
+      entity.ToTable("Products");
+      entity.HasKey(p => p.Id);
+      entity.Property(p => p.Name)
+            .IsRequired()
+            .HasMaxLength(100);
+  });
+  ```
+- Fluent API has higher precedence and more configuration options
+- Data Annotations are simpler but less flexible
+</details>
+
+<details>
+<summary>144. When would you choose Fluent API over Data Annotations?</summary>
+
+- Complex configurations not supported by annotations (e.g., composite keys, table splitting)
+- Keep domain models clean (no EF dependencies)
+- Configure relationships with cascading deletes
+- Set up indexes, sequences, or database-specific features
+- Apply configurations conditionally or from external sources
+</details>
+
+---
+
+### Migrations
+
+<details>
+<summary>145. What are EF Migrations and why are they important?</summary>
+
+- Track and apply database schema changes incrementally
+- Generate SQL scripts from model changes
+- Enable version control of database schema
+- Support both upgrading and downgrading database versions
+- Commands: `Add-Migration`, `Update-Database`, `Remove-Migration`
+</details>
+
+<details>
+<summary>146. How do you apply migrations in production?</summary>
+
+- **Script generation**: `Script-Migration` to generate SQL scripts for DBA review
+- **Bundle**: `dotnet ef migrations bundle` creates executable for deployment
+- **Programmatic**: `context.Database.Migrate()` (use cautiously)
+- Never use `Update-Database` directly in production
+- Always backup database before applying migrations
+</details>
+
+---
+
+### Data Seeding
+
+<details>
+<summary>147. What is Data Seeding in Entity Framework?</summary>
+
+- Populate database with initial/default data
+- Configured in `OnModelCreating` using `HasData()`
+  ```csharp
+  modelBuilder.Entity<Category>().HasData(
+      new Category { Id = 1, Name = "Electronics" },
+      new Category { Id = 2, Name = "Clothing" }
+  );
+  ```
+- Data is part of migrations (reproducible)
+- Primary keys must be explicitly specified
+- Updates to seeded data create new migrations
+</details>
+
+<details>
+<summary>148. What are the limitations of HasData seeding?</summary>
+
+- Requires explicit primary key values
+- Cannot use navigation properties directly
+- Limited to simple scenarios (no computed values)
+- Alternatives for complex seeding:
+  - Custom initialization logic in startup
+  - SQL scripts in migrations
+  - `DbContext.SaveChanges()` in seed method
+</details>
+
+---
+
+### Supported Approaches
+
+<details>
+<summary>149. What is Code-First approach in Entity Framework?</summary>
+
+- Define C# classes first, database is generated from them
+- Use migrations to evolve database schema
+- Domain model is the source of truth
+- Benefits: version control, clean domain models, rapid development
+- Best for new projects or when you control the database
+</details>
+
+<details>
+<summary>150. What is Database-First approach in Entity Framework?</summary>
+
+- Start with existing database, generate C# classes from it
+- Use `Scaffold-DbContext` command for reverse engineering
+- Database schema is the source of truth
+- Benefits: work with legacy databases, DBA-controlled schemas
+- Regeneration needed when database changes
+</details>
+
+<details>
+<summary>151. How do you choose between Code-First and Database-First?</summary>
+
+- **Code-First**: greenfield projects, full control over schema, agile development
+- **Database-First**: existing databases, DBA-managed schemas, complex stored procedures
+- **Model-First** (legacy): visual designer, less common in EF Core
+- Consider team expertise and organizational policies
+</details>
+
+---
+
+### IQueryable vs IEnumerable
+
+<details>
+<summary>152. What is the difference between IQueryable and IEnumerable in EF?</summary>
+
+- `IQueryable<T>`: query translated to SQL, executed on database
+- `IEnumerable<T>`: data loaded into memory, filtering done in C#
+  ```csharp
+  // IQueryable - SQL: SELECT * FROM Products WHERE Price > 100
+  var expensive = context.Products.Where(p => p.Price > 100);
+  
+  // IEnumerable - loads ALL products, then filters in memory
+  IEnumerable<Product> products = context.Products;
+  var expensive = products.Where(p => p.Price > 100);
+  ```
+- Always prefer `IQueryable` for database queries
+- `AsEnumerable()` or `ToList()` switches to client evaluation
+</details>
+
+<details>
+<summary>153. When would you intentionally use client-side evaluation?</summary>
+
+- When using C# methods not translatable to SQL
+- Complex string manipulations or custom logic
+- Working with in-memory cached data
+- Use `AsEnumerable()` at the point where client evaluation is needed
+- EF Core throws exception for untranslatable queries by default
+</details>
+
+---
+
+### Loading Related Entities
+
+<details>
+<summary>154. What is Eager Loading and how do you use it?</summary>
+
+- Load related entities in a single query using `Include()`
+  ```csharp
+  var orders = context.Orders
+      .Include(o => o.Customer)
+      .Include(o => o.OrderItems)
+          .ThenInclude(oi => oi.Product)
+      .ToList();
+  ```
+- Generates JOINs in SQL
+- Best when you know you'll need related data
+- Can lead to large result sets (Cartesian explosion)
+</details>
+
+<details>
+<summary>155. What is Lazy Loading and what are its pros/cons?</summary>
+
+- Related entities loaded on first access
+- Requires: virtual navigation properties + proxies or `ILazyLoader`
+  ```csharp
+  public virtual ICollection<Order> Orders { get; set; }
+  ```
+- **Pros**: simple, loads only what's accessed
+- **Cons**: N+1 query problem, unexpected database calls
+- Must be explicitly enabled in EF Core
+</details>
+
+<details>
+<summary>156. What is Explicit Loading?</summary>
+
+- Manually load related entities on demand
+  ```csharp
+  var order = context.Orders.Find(1);
+  
+  // Load related entities explicitly
+  context.Entry(order)
+      .Collection(o => o.OrderItems)
+      .Load();
+  
+  context.Entry(order)
+      .Reference(o => o.Customer)
+      .Load();
+  ```
+- More control than lazy loading
+- Useful when decision to load is conditional
+</details>
+
+<details>
+<summary>157. What is the N+1 query problem and how do you avoid it?</summary>
+
+- 1 query for parent + N queries for each child (lazy loading)
+  ```csharp
+  // N+1 Problem
+  var orders = context.Orders.ToList(); // 1 query
+  foreach (var order in orders)
+  {
+      var items = order.OrderItems; // N queries!
+  }
+  ```
+- Solutions:
+  - Use eager loading with `Include()`
+  - Use projection with `Select()`
+  - Use split queries for large includes
+  - Disable lazy loading in performance-critical code
+</details>
+
+---
+
+### Many-to-Many Relationships
+
+<details>
+<summary>158. How do you implement Many-to-Many relationships in EF Core?</summary>
+
+- **EF Core 5+**: Skip navigations (no join entity needed)
+  ```csharp
+  public class Student
+  {
+      public int Id { get; set; }
+      public ICollection<Course> Courses { get; set; }
+  }
+  
+  public class Course
+  {
+      public int Id { get; set; }
+      public ICollection<Student> Students { get; set; }
+  }
+  ```
+- **With payload** (extra columns in join table):
+  ```csharp
+  public class Enrollment
+  {
+      public int StudentId { get; set; }
+      public int CourseId { get; set; }
+      public DateTime EnrollmentDate { get; set; }
+      public Student Student { get; set; }
+      public Course Course { get; set; }
+  }
+  ```
+</details>
+
+<details>
+<summary>159. How do you configure Many-to-Many with Fluent API?</summary>
+
+```csharp
+// Skip navigation (EF Core 5+)
+modelBuilder.Entity<Student>()
+    .HasMany(s => s.Courses)
+    .WithMany(c => c.Students)
+    .UsingEntity(j => j.ToTable("StudentCourses"));
+
+// With explicit join entity
+modelBuilder.Entity<Enrollment>()
+    .HasKey(e => new { e.StudentId, e.CourseId });
+
+modelBuilder.Entity<Enrollment>()
+    .HasOne(e => e.Student)
+    .WithMany(s => s.Enrollments)
+    .HasForeignKey(e => e.StudentId);
+
+modelBuilder.Entity<Enrollment>()
+    .HasOne(e => e.Course)
+    .WithMany(c => c.Enrollments)
+    .HasForeignKey(e => e.CourseId);
+```
+</details>
+
+---
+
+### Change Tracking
+
+<details>
+<summary>160. What is Change Tracking in Entity Framework?</summary>
+
+- EF tracks state of entities loaded from database
+- States: `Unchanged`, `Added`, `Modified`, `Deleted`, `Detached`
+- Automatically detects changes when `SaveChanges()` is called
+- Enables EF to generate appropriate INSERT/UPDATE/DELETE statements
+</details>
+
+<details>
+<summary>161. When and why would you disable Change Tracking?</summary>
+
+- Use `AsNoTracking()` for read-only queries
+  ```csharp
+  var products = context.Products
+      .AsNoTracking()
+      .Where(p => p.IsActive)
+      .ToList();
+  ```
+- Benefits: better performance, lower memory usage
+- Use when: reporting queries, read-only APIs, large data sets
+- Cannot call `SaveChanges()` on untracked entities
+</details>
+
+<details>
+<summary>162. How do you manually control entity state?</summary>
+
+```csharp
+// Check current state
+var state = context.Entry(product).State;
+
+// Manually set state
+context.Entry(product).State = EntityState.Modified;
+
+// Or use DbSet methods
+context.Products.Add(product);      // Added
+context.Products.Update(product);   // Modified
+context.Products.Remove(product);   // Deleted
+context.Products.Attach(product);   // Unchanged
+```
+</details>
+
+---
+
+### Working with Disconnected Entities
+
+<details>
+<summary>163. What are disconnected entities and why are they challenging?</summary>
+
+- Entities not tracked by current DbContext (e.g., from web API requests)
+- Context doesn't know if entity is new or existing
+- Common in web applications where entities cross request boundaries
+- Must manually determine and set correct entity state
+</details>
+
+<details>
+<summary>164. How do you handle updates with disconnected entities?</summary>
+
+```csharp
+public void UpdateProduct(ProductDto dto)
+{
+    var product = new Product
+    {
+        Id = dto.Id,
+        Name = dto.Name,
+        Price = dto.Price
+    };
+    
+    // Option 1: Update all properties
+    context.Products.Update(product);
+    
+    // Option 2: Attach and mark specific properties
+    context.Attach(product);
+    context.Entry(product).Property(p => p.Name).IsModified = true;
+    
+    // Option 3: Load existing and map changes
+    var existing = context.Products.Find(dto.Id);
+    if (existing != null)
+    {
+        existing.Name = dto.Name;
+        existing.Price = dto.Price;
+    }
+    
+    context.SaveChanges();
+}
+```
+</details>
+
+---
+
+### Inheritance Strategies
+
+<details>
+<summary>165. What inheritance strategies does EF Core support?</summary>
+
+- **Table per Hierarchy (TPH)**: single table with discriminator column
+- **Table per Type (TPT)**: separate table for each type
+- **Table per Concrete Class (TPC)**: separate table for each concrete class
+- Each has different trade-offs for performance and normalization
+</details>
+
+<details>
+<summary>166. Explain Table per Hierarchy (TPH) strategy.</summary>
+
+```csharp
+public abstract class Payment
+{
+    public int Id { get; set; }
+    public decimal Amount { get; set; }
+}
+
+public class CashPayment : Payment { }
+
+public class CardPayment : Payment
+{
+    public string CardNumber { get; set; }
+}
+
+// Single table with discriminator
+modelBuilder.Entity<Payment>()
+    .HasDiscriminator<string>("PaymentType")
+    .HasValue<CashPayment>("Cash")
+    .HasValue<CardPayment>("Card");
+```
+- **Pros**: best query performance, single table
+- **Cons**: nullable columns, no database constraints per type
+</details>
+
+<details>
+<summary>167. Explain Table per Type (TPT) strategy.</summary>
+
+```csharp
+modelBuilder.Entity<CashPayment>().ToTable("CashPayments");
+modelBuilder.Entity<CardPayment>().ToTable("CardPayments");
+```
+- Separate table for each derived type
+- Base type properties in base table, derived in their tables
+- **Pros**: normalized, proper constraints, no nullable columns
+- **Cons**: JOINs required, slower queries
+</details>
+
+<details>
+<summary>168. Explain Table per Concrete Class (TPC) strategy.</summary>
+
+```csharp
+modelBuilder.Entity<Payment>().UseTpcMappingStrategy();
+modelBuilder.Entity<CashPayment>().ToTable("CashPayments");
+modelBuilder.Entity<CardPayment>().ToTable("CardPayments");
+```
+- Each concrete type has its own complete table
+- No table for abstract base class
+- **Pros**: no JOINs for concrete type queries
+- **Cons**: UNION needed for base type queries, duplicate columns
+</details>
+
+<details>
+<summary>169. How do you choose the right inheritance strategy?</summary>
+
+| Strategy | Use When |
+|----------|----------|
+| TPH | Most queries on base type, few derived types, performance critical |
+| TPT | Need database constraints, many properties per derived type |
+| TPC | Rarely query base type, want isolated tables per type |
+
+- TPH is the default and usually best for performance
+- Consider data integrity requirements and query patterns
+</details>
+
+---
+
+### Owned Entities
+
+<details>
+<summary>170. What are Owned Entities in EF Core?</summary>
+
+- Value objects that belong to another entity
+- No identity of their own (no primary key table)
+- Always accessed through owner entity
+  ```csharp
+  public class Order
+  {
+      public int Id { get; set; }
+      public Address ShippingAddress { get; set; }
+  }
+
+  [Owned]
+  public class Address
+  {
+      public string Street { get; set; }
+      public string City { get; set; }
+      public string ZipCode { get; set; }
+  }
+  ```
+- Stored in same table as owner (or separate table with config)
+</details>
+
+<details>
+<summary>171. How do you configure Owned Entities with Fluent API?</summary>
+
+```csharp
+modelBuilder.Entity<Order>()
+    .OwnsOne(o => o.ShippingAddress, address =>
+    {
+        address.Property(a => a.Street).HasColumnName("ShipStreet");
+        address.Property(a => a.City).HasColumnName("ShipCity");
+    });
+
+// Owned entity in separate table
+modelBuilder.Entity<Order>()
+    .OwnsOne(o => o.ShippingAddress)
+    .ToTable("OrderAddresses");
+
+// Collection of owned entities
+modelBuilder.Entity<Order>()
+    .OwnsMany(o => o.OrderItems);
+```
+</details>
+
+---
+
+### Value Conversion
+
+<details>
+<summary>172. What is Value Conversion in EF Core?</summary>
+
+- Convert property values between .NET type and database type
+- Useful for: enums, encrypted values, JSON, custom types
+  ```csharp
+  modelBuilder.Entity<Order>()
+      .Property(o => o.Status)
+      .HasConversion<string>(); // Enum to string
+
+  // Custom converter
+  modelBuilder.Entity<User>()
+      .Property(u => u.Email)
+      .HasConversion(
+          v => v.ToLower(),           // To database
+          v => v                       // From database
+      );
+  ```
+</details>
+
+<details>
+<summary>173. How do you create a custom ValueConverter?</summary>
+
+```csharp
+public class MoneyConverter : ValueConverter<Money, decimal>
+{
+    public MoneyConverter() : base(
+        money => money.Amount,
+        value => new Money(value))
+    { }
+}
+
+// Or use ValueConverter<TModel, TProvider>
+var converter = new ValueConverter<List<string>, string>(
+    v => JsonSerializer.Serialize(v, null),
+    v => JsonSerializer.Deserialize<List<string>>(v, null)
+);
+
+modelBuilder.Entity<Post>()
+    .Property(p => p.Tags)
+    .HasConversion(converter);
+```
+</details>
+
+---
+
+### Global Query Filters
+
+<details>
+<summary>174. What are Global Query Filters and when would you use them?</summary>
+
+- Automatically applied to all queries for an entity
+- Common uses: soft delete, multi-tenancy, row-level security
+  ```csharp
+  modelBuilder.Entity<Product>()
+      .HasQueryFilter(p => !p.IsDeleted);
+
+  modelBuilder.Entity<Order>()
+      .HasQueryFilter(o => o.TenantId == _tenantId);
+  ```
+- All queries automatically exclude deleted/other tenant data
+</details>
+
+<details>
+<summary>175. How do you bypass Global Query Filters?</summary>
+
+```csharp
+// Include filtered entities
+var allProducts = context.Products
+    .IgnoreQueryFilters()
+    .ToList();
+
+// Include in navigation (EF Core 5+)
+var orders = context.Orders
+    .Include(o => o.Products.IgnoreQueryFilters())
+    .ToList();
+```
+- Use `IgnoreQueryFilters()` when you need all data
+- Be careful not to accidentally expose filtered data
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><strong>HTTP</strong></summary>
+
+### Web Resources
+
+<details>
+<summary>176. What is the difference between URI, URL, and URN?</summary>
+
+- **URI** (Uniform Resource Identifier): generic identifier for any resource
+- **URL** (Uniform Resource Locator): URI that specifies how to access the resource (includes scheme/protocol)
+- **URN** (Uniform Resource Name): URI that names a resource without specifying location
+- Example: `https://example.com/page` (URL), `urn:isbn:0451450523` (URN)
+- All URLs and URNs are URIs, but not all URIs are URLs
+</details>
+
+<details>
+<summary>177. What are the components of a URI?</summary>
+
+```
+https://user:pass@example.com:8080/path/to/resource?query=value#section
+|_____|  |______| |_________| |__||________________||__________||_____|
+scheme  userinfo    host     port     path           query     fragment
+```
+- **Scheme**: protocol (`http`, `https`, `ftp`)
+- **Host**: domain name or IP address
+- **Port**: optional, defaults depend on scheme (80 for HTTP, 443 for HTTPS)
+- **Path**: hierarchical path to resource
+- **Query string**: key-value pairs after `?`, separated by `&`
+- **Fragment**: client-side reference after `#`, not sent to server
+</details>
+
+<details>
+<summary>178. What are Media Types (MIME types)?</summary>
+
+- Format specification for data: `type/subtype`
+- Common examples:
+  - `text/html`, `text/plain`, `text/css`
+  - `application/json`, `application/xml`, `application/pdf`
+  - `image/png`, `image/jpeg`, `image/svg+xml`
+  - `multipart/form-data` for file uploads
+- Used in `Content-Type` and `Accept` headers
+- Can include parameters: `text/html; charset=utf-8`
+</details>
+
+---
+
+### HTTP Transaction
+
+<details>
+<summary>179. What is an HTTP transaction?</summary>
+
+- Single request-response exchange between client and server
+- Client sends request (method, URL, headers, optional body)
+- Server processes and returns response (status code, headers, optional body)
+- Stateless: each transaction is independent
+- Persistent connections allow multiple transactions per TCP connection
+</details>
+
+<details>
+<summary>180. What are the main HTTP methods and their purposes?</summary>
+
+| Method | Purpose | Idempotent | Safe | Body |
+|--------|---------|------------|------|------|
+| GET | Retrieve resource | Yes | Yes | No |
+| POST | Create resource / submit data | No | No | Yes |
+| PUT | Replace resource entirely | Yes | No | Yes |
+| PATCH | Partial update | No* | No | Yes |
+| DELETE | Remove resource | Yes | No | Optional |
+| HEAD | GET without body (metadata only) | Yes | Yes | No |
+| OPTIONS | Get allowed methods / CORS preflight | Yes | Yes | No |
+
+*PATCH can be idempotent depending on implementation
+</details>
+
+<details>
+<summary>181. What is the difference between PUT and PATCH?</summary>
+
+- **PUT**: replaces entire resource; must send complete representation
+  ```http
+  PUT /users/1
+  { "name": "John", "email": "john@example.com", "age": 30 }
+  ```
+- **PATCH**: partial update; send only changed fields
+  ```http
+  PATCH /users/1
+  { "age": 31 }
+  ```
+- PUT is idempotent; PATCH may or may not be
+- Use PUT when client has full resource; PATCH for partial updates
+</details>
+
+<details>
+<summary>182. What do the HTTP status code ranges mean?</summary>
+
+- **1xx Informational**: request received, continuing process
+  - `100 Continue`, `101 Switching Protocols`
+- **2xx Success**: request successfully received and processed
+  - `200 OK`, `201 Created`, `204 No Content`
+- **3xx Redirection**: further action needed
+  - `301 Moved Permanently`, `302 Found`, `304 Not Modified`
+- **4xx Client Error**: problem with the request
+  - `400 Bad Request`, `401 Unauthorized`, `403 Forbidden`, `404 Not Found`
+- **5xx Server Error**: server failed to fulfill valid request
+  - `500 Internal Server Error`, `502 Bad Gateway`, `503 Service Unavailable`
+</details>
+
+<details>
+<summary>183. What is the structure of an HTTP message?</summary>
+
+**Request:**
+```http
+GET /api/users HTTP/1.1
+Host: example.com
+Accept: application/json
+Authorization: Bearer token123
+
+[optional body]
+```
+
+**Response:**
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 42
+
+{"id": 1, "name": "John"}
+```
+- Start line (request line or status line)
+- Headers (key-value pairs)
+- Empty line (CRLF)
+- Optional message body
+</details>
+
+---
+
+### Cookies
+
+<details>
+<summary>184. How do HTTP cookies work?</summary>
+
+- Server sets cookie via `Set-Cookie` response header
+- Browser stores and sends cookie with subsequent requests
+- Used for: session management, personalization, tracking
+```http
+Set-Cookie: sessionId=abc123; Path=/; HttpOnly; Secure
+```
+- Browser sends back: `Cookie: sessionId=abc123`
+</details>
+
+<details>
+<summary>185. What is the difference between Session and Permanent cookies?</summary>
+
+- **Session cookies**: no `Expires`/`Max-Age`, deleted when browser closes
+- **Permanent cookies**: have explicit expiration
+  ```http
+  Set-Cookie: remember=true; Max-Age=2592000
+  Set-Cookie: token=xyz; Expires=Wed, 09 Jun 2025 10:18:14 GMT
+  ```
+- Session cookies for temporary state; permanent for "remember me" features
+</details>
+
+<details>
+<summary>186. What do Secure and HttpOnly cookie attributes do?</summary>
+
+- **Secure**: cookie only sent over HTTPS connections
+  - Prevents transmission over unencrypted HTTP
+- **HttpOnly**: cookie not accessible via JavaScript (`document.cookie`)
+  - Mitigates XSS attacks from stealing session tokens
+- Best practice: always use both for authentication cookies
+  ```http
+  Set-Cookie: auth=token; Secure; HttpOnly
+  ```
+</details>
+
+<details>
+<summary>187. How does cookie scope work (Domain and Path)?</summary>
+
+- **Domain**: which hosts receive the cookie
+  - `Domain=example.com` includes subdomains (`api.example.com`)
+  - No domain = exact host only (more restrictive)
+- **Path**: URL path prefix for cookie inclusion
+  - `Path=/api` means cookie sent for `/api/*` requests only
+- **SameSite**: controls cross-site sending
+  - `Strict`: never sent cross-site
+  - `Lax`: sent on top-level navigation GET requests
+  - `None`: always sent (requires `Secure`)
+</details>
+
+<details>
+<summary>188. How does HTTP Basic Authentication work?</summary>
+
+- Credentials sent in `Authorization` header
+- Format: `Basic base64(username:password)`
+  ```http
+  Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+  ```
+- Server responds with `401 Unauthorized` + `WWW-Authenticate: Basic` if missing
+- **Security concerns**: credentials sent with every request, only secure over HTTPS
+- Prefer token-based authentication (JWT, OAuth) for modern applications
+</details>
+
+---
+
+### CORS (Cross-Origin Resource Sharing)
+
+<details>
+<summary>189. What is the Same-Origin Policy?</summary>
+
+- Browser security feature that restricts cross-origin HTTP requests
+- Same origin = same scheme, host, AND port
+  - `https://example.com` ≠ `http://example.com` (different scheme)
+  - `https://example.com` ≠ `https://api.example.com` (different host)
+  - `https://example.com` ≠ `https://example.com:8080` (different port)
+- Prevents malicious sites from reading data from other origins
+- Does NOT prevent requests from being sent, only reading responses
+</details>
+
+<details>
+<summary>190. What does CORS guarantee? Does it prevent cross-origin requests?</summary>
+
+- **CORS does NOT prevent requests from being sent**
+- CORS controls whether the browser allows JavaScript to read the response
+- A cross-origin POST request IS sent to the server (and may have side effects)
+- CORS headers tell browser whether to expose response to JavaScript
+- Server-side validation is still required for security
+- Preflight requests can block some requests before they're sent
+</details>
+
+<details>
+<summary>191. How do CORS headers work?</summary>
+
+- **Request headers** (added by browser):
+  - `Origin: https://client.com`
+- **Response headers** (set by server):
+  - `Access-Control-Allow-Origin: https://client.com` (or `*`)
+  - `Access-Control-Allow-Methods: GET, POST, PUT`
+  - `Access-Control-Allow-Headers: Content-Type, Authorization`
+  - `Access-Control-Allow-Credentials: true`
+  - `Access-Control-Max-Age: 86400` (cache preflight)
+- If response headers don't match request, browser blocks access
+</details>
+
+<details>
+<summary>192. What is a preflight request and when is it sent?</summary>
+
+- **Preflight**: `OPTIONS` request sent before actual request
+- Browser sends preflight for "non-simple" requests:
+  - Methods other than GET, HEAD, POST
+  - Custom headers (except `Accept`, `Content-Type` with simple values)
+  - `Content-Type` other than `application/x-www-form-urlencoded`, `multipart/form-data`, `text/plain`
+- **NOT sent for simple requests** (GET/POST with simple headers)
+- Server must respond with appropriate `Access-Control-*` headers
+```http
+OPTIONS /api/users HTTP/1.1
+Origin: https://client.com
+Access-Control-Request-Method: PUT
+Access-Control-Request-Headers: Content-Type
+```
+</details>
+
+---
+
+### HTTP/2
+
+<details>
+<summary>193. What are the main improvements in HTTP/2?</summary>
+
+- **Multiplexing**: multiple requests/responses over single connection
+- **Binary framing**: efficient parsing (vs text in HTTP/1.1)
+- **Header compression**: HPACK algorithm reduces overhead
+- **Server push**: server can send resources before client requests
+- **Stream prioritization**: important resources loaded first
+- Backward compatible: same semantics, different wire format
+</details>
+
+<details>
+<summary>194. How does HTTP/2 multiplexing work?</summary>
+
+- Single TCP connection carries multiple bidirectional streams
+- Each stream has unique ID, can be prioritized
+- Requests/responses are split into frames, interleaved on connection
+- Eliminates head-of-line blocking at HTTP level
+- No need for HTTP/1.1 workarounds (domain sharding, sprite sheets)
+```
+Connection: [Frame1-StreamA][Frame1-StreamB][Frame2-StreamA][Frame2-StreamB]
+```
+</details>
+
+<details>
+<summary>195. What is HTTP/2 Server Push?</summary>
+
+- Server proactively sends resources before client requests them
+- Example: when client requests `index.html`, push `style.css` and `app.js`
+- Uses `PUSH_PROMISE` frame to announce pushed resources
+- Client can reject pushes with `RST_STREAM`
+- Benefits: reduces round trips, improves page load
+- Limitations: may waste bandwidth if client has cached resource
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><strong>ASP.NET Core</strong></summary>
+
+### MVC Pattern
+
+<details>
+<summary>196. What is the MVC pattern in ASP.NET Core?</summary>
+
+- **Model**: data and business logic, domain entities
+- **View**: UI representation (Razor pages, HTML)
+- **Controller**: handles requests, coordinates model and view
+- Separation of concerns: each component has distinct responsibility
+- Flow: Request → Controller → Model → View → Response
+</details>
+
+---
+
+### Application Lifecycle
+
+<details>
+<summary>197. Explain the ASP.NET Core application lifecycle and Startup class.</summary>
+
+**Startup class (pre-.NET 6):**
+```csharp
+public class Startup
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+        // Register DI services
+        services.AddControllers();
+        services.AddDbContext<AppDbContext>();
+    }
+    
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        // Configure middleware pipeline
+        app.UseRouting();
+        app.UseAuthentication();
+        app.UseAuthorization();
+        app.UseEndpoints(endpoints => endpoints.MapControllers());
+    }
+}
+```
+**.NET 6+ Minimal hosting:**
+```csharp
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddControllers();
+
+var app = builder.Build();
+app.UseRouting();
+app.MapControllers();
+app.Run();
+```
+</details>
+
+<details>
+<summary>198. What is the Host in ASP.NET Core?</summary>
+
+- **Host**: object that encapsulates application resources
+- Manages: dependency injection, logging, configuration, hosted services
+- **Web Host** (legacy): for web applications only
+- **Generic Host** (.NET Core 3.0+): unified hosting model
+- Responsibilities:
+  - App startup and lifetime management
+  - Server configuration (Kestrel)
+  - Service configuration
+```csharp
+var host = Host.CreateDefaultBuilder(args)
+    .ConfigureWebHostDefaults(webBuilder =>
+    {
+        webBuilder.UseStartup<Startup>();
+    })
+    .Build();
+```
+</details>
+
+<details>
+<summary>199. How do Environments work in ASP.NET Core?</summary>
+
+- Set via `ASPNETCORE_ENVIRONMENT` environment variable
+- Common values: `Development`, `Staging`, `Production`
+- Access via `IWebHostEnvironment.EnvironmentName`
+- Conditional configuration:
+```csharp
+if (env.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler("/Error");
+    app.UseHsts();
+}
+```
+- Environment-specific appsettings: `appsettings.Development.json`
+</details>
+
+---
+
+### Middleware
+
+<details>
+<summary>200. What is Middleware in ASP.NET Core?</summary>
+
+- Components that handle requests and responses in a pipeline
+- Each middleware can:
+  - Process the request before passing to next
+  - Short-circuit the pipeline (stop processing)
+  - Process the response after next middleware returns
+- Order matters: first added = first to handle request, last to handle response
+- Examples: authentication, routing, exception handling, static files
+</details>
+
+<details>
+<summary>201. How do you write custom middleware?</summary>
+
+**Convention-based:**
+```csharp
+public class RequestLoggingMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly ILogger _logger;
+
+    public RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
+    {
+        _next = next;
+        _logger = logger;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        _logger.LogInformation($"Request: {context.Request.Path}");
+        await _next(context);  // Call next middleware
+        _logger.LogInformation($"Response: {context.Response.StatusCode}");
+    }
+}
+
+// Registration
+app.UseMiddleware<RequestLoggingMiddleware>();
+```
+
+**Inline middleware:**
+```csharp
+app.Use(async (context, next) =>
+{
+    // Before
+    await next();
+    // After
+});
+```
+</details>
+
+---
+
+### Routing
+
+<details>
+<summary>202. How does routing work in ASP.NET Core?</summary>
+
+- Maps incoming URLs to endpoints (controllers, Razor pages, etc.)
+- **Conventional routing**: defined centrally in Startup
+  ```csharp
+  app.MapControllerRoute(
+      name: "default",
+      pattern: "{controller=Home}/{action=Index}/{id?}");
+  ```
+- **Attribute routing**: defined on controllers/actions
+  ```csharp
+  [Route("api/[controller]")]
+  public class UsersController : ControllerBase
+  {
+      [HttpGet("{id}")]
+      public IActionResult Get(int id) => Ok();
+  }
+  ```
+- Route constraints: `{id:int}`, `{name:alpha}`, `{date:datetime}`
+</details>
+
+---
+
+### Filters
+
+<details>
+<summary>203. What are Filters in ASP.NET Core and what types exist?</summary>
+
+- Code that runs before/after specific stages in the request pipeline
+- Types (in execution order):
+  1. **Authorization filters**: run first, check access
+  2. **Resource filters**: before/after model binding, caching
+  3. **Action filters**: before/after action execution
+  4. **Exception filters**: handle unhandled exceptions
+  5. **Result filters**: before/after action result execution
+```csharp
+public class LogActionFilter : IActionFilter
+{
+    public void OnActionExecuting(ActionExecutingContext context)
+    {
+        // Before action
+    }
+    
+    public void OnActionExecuted(ActionExecutedContext context)
+    {
+        // After action
+    }
+}
+```
+</details>
+
+---
+
+### Model Binding and Validation
+
+<details>
+<summary>204. What is Model Binding in ASP.NET Core?</summary>
+
+- Automatically maps HTTP request data to action parameters
+- Sources (in order): Form values, Route values, Query strings, Headers
+- Binding sources can be explicit:
+  ```csharp
+  public IActionResult Create(
+      [FromBody] CreateUserDto user,
+      [FromRoute] int id,
+      [FromQuery] string filter,
+      [FromHeader] string authorization)
+  ```
+- Complex types bound from body by default in APIs
+- Supports custom model binders for special types
+</details>
+
+<details>
+<summary>205. How does Model Validation work?</summary>
+
+- Automatic validation using Data Annotations
+```csharp
+public class UserDto
+{
+    [Required]
+    [StringLength(100)]
+    public string Name { get; set; }
+    
+    [EmailAddress]
+    public string Email { get; set; }
+    
+    [Range(0, 150)]
+    public int Age { get; set; }
+}
+```
+- Check in controller: `ModelState.IsValid`
+- API controllers with `[ApiController]` return 400 automatically
+- Custom validation: `IValidatableObject` or custom attributes
+</details>
+
+---
+
+### Authentication and Authorization
+
+<details>
+<summary>206. What is ASP.NET Core Identity?</summary>
+
+- Membership system for user authentication
+- Features: user registration, login, password hashing, roles, claims
+- Uses Entity Framework for storage (customizable)
+- Components:
+  - `UserManager<T>`: user operations
+  - `SignInManager<T>`: authentication operations
+  - `RoleManager<T>`: role management
+```csharp
+services.AddIdentity<ApplicationUser, IdentityRole>()
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
+```
+</details>
+
+<details>
+<summary>207. How does Authorization work in ASP.NET Core?</summary>
+
+- **Simple authorization**: `[Authorize]` attribute
+- **Role-based**: `[Authorize(Roles = "Admin,Manager")]`
+- **Policy-based**: custom requirements
+```csharp
+services.AddAuthorization(options =>
+{
+    options.AddPolicy("MinimumAge", policy =>
+        policy.Requirements.Add(new MinimumAgeRequirement(18)));
+});
+
+[Authorize(Policy = "MinimumAge")]
+public IActionResult AdultContent() => View();
+```
+- **Resource-based**: for data-specific authorization
+- Claims-based: check user claims for fine-grained access
+</details>
+
+---
+
+### Static Files and Health Checks
+
+<details>
+<summary>208. How do you serve static files in ASP.NET Core?</summary>
+
+```csharp
+app.UseStaticFiles(); // Serves from wwwroot
+
+// Custom location
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "MyStaticFiles")),
+    RequestPath = "/static"
+});
+```
+- Files in `wwwroot` served by default
+- Enable directory browsing: `app.UseDirectoryBrowser()`
+- Set cache headers, default documents, MIME type mappings
+</details>
+
+<details>
+<summary>209. What are Health Checks in ASP.NET Core?</summary>
+
+- Monitor application and dependency health
+- Used by orchestrators (Kubernetes, load balancers)
+```csharp
+services.AddHealthChecks()
+    .AddDbContextCheck<AppDbContext>()
+    .AddRedis(redisConnectionString)
+    .AddCheck<CustomHealthCheck>("custom");
+
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
+```
+- Returns: Healthy, Degraded, or Unhealthy
+- Can check: databases, external APIs, disk space, memory
+</details>
+
+---
+
+### Content Negotiation
+
+<details>
+<summary>210. What is Content Negotiation?</summary>
+
+- Server selects response format based on client preferences
+- Client specifies via `Accept` header: `Accept: application/json`
+- Server responds with appropriate `Content-Type`
+- ASP.NET Core supports JSON by default, can add XML:
+```csharp
+services.AddControllers()
+    .AddXmlSerializerFormatters();
+```
+- Custom formatters for other media types
+- Respects quality values: `Accept: application/json;q=0.9, application/xml;q=0.5`
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><strong>ASP.NET Core Web APIs</strong></summary>
+
+### REST API Design
+
+<details>
+<summary>211. What are RESTful API design principles?</summary>
+
+- **Resources**: nouns, not verbs (`/users`, not `/getUsers`)
+- **HTTP methods**: GET (read), POST (create), PUT (replace), PATCH (update), DELETE
+- **Stateless**: no session state on server
+- **Uniform interface**: consistent URL patterns
+- **HATEOAS**: include links to related resources
+- Best practices:
+  - Use plural nouns: `/api/products`
+  - Hierarchical relationships: `/api/users/1/orders`
+  - Filter, sort, paginate via query strings
+</details>
+
+<details>
+<summary>212. What is ControllerBase vs Controller?</summary>
+
+- **ControllerBase**: base class for API controllers
+  - No view support, lighter weight
+  - Contains: `Ok()`, `NotFound()`, `BadRequest()`, `CreatedAtAction()`
+- **Controller**: extends ControllerBase
+  - Adds view support: `View()`, `PartialView()`, `ViewBag`
+  - Use for MVC controllers with Razor views
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+public class ProductsController : ControllerBase  // For APIs
+{
+    [HttpGet]
+    public ActionResult<IEnumerable<Product>> Get() => Ok(_products);
+}
+```
+</details>
+
+<details>
+<summary>213. What action return types are available in Web APIs?</summary>
+
+- **Specific type**: `Product`, strongly typed
+- **IActionResult**: flexibility, any status code
+- **ActionResult\<T\>**: combines both benefits
+```csharp
+// Specific type - always 200 OK
+public Product Get(int id) => _repo.Get(id);
+
+// IActionResult - any status, loses type info
+public IActionResult Get(int id)
+{
+    var product = _repo.Get(id);
+    return product == null ? NotFound() : Ok(product);
+}
+
+// ActionResult<T> - best of both
+public ActionResult<Product> Get(int id)
+{
+    var product = _repo.Get(id);
+    return product == null ? NotFound() : product;
+}
+```
+- `[ApiController]` attribute enables automatic 400 for invalid models
+</details>
+
+---
+
+### API Versioning
+
+<details>
+<summary>214. How do you implement API versioning in ASP.NET Core?</summary>
+
+```csharp
+services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+});
+```
+
+**Versioning strategies:**
+- Query string: `/api/products?api-version=2.0`
+- URL path: `/api/v2/products`
+- Header: `X-Api-Version: 2.0`
+- Media type: `Accept: application/json;v=2.0`
+
+```csharp
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
+public class ProductsV1Controller : ControllerBase { }
+
+[ApiVersion("2.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
+public class ProductsV2Controller : ControllerBase { }
+```
+</details>
+
+---
+
+### CORS in ASP.NET Core
+
+<details>
+<summary>215. How do you configure CORS in ASP.NET Core?</summary>
+
+```csharp
+// In ConfigureServices / Program.cs
+services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin", builder =>
+    {
+        builder.WithOrigins("https://example.com")
+               .AllowAnyMethod()
+               .AllowAnyHeader()
+               .AllowCredentials();
+    });
+    
+    options.AddPolicy("AllowAll", builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
+
+// In Configure / app
+app.UseCors("AllowSpecificOrigin");
+
+// Or per-controller/action
+[EnableCors("AllowSpecificOrigin")]
+public class ProductsController : ControllerBase { }
+```
+</details>
+
+---
+
+### Swagger / OpenAPI
+
+<details>
+<summary>216. What is Swagger/OpenAPI and how do you configure it?</summary>
+
+- **OpenAPI**: specification for describing REST APIs
+- **Swagger**: tooling around OpenAPI (UI, code generation)
+- **Swashbuckle**: ASP.NET Core integration
+```csharp
+services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "My API",
+        Version = "v1",
+        Description = "API documentation"
+    });
+});
+
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+});
+```
+- Auto-generates documentation from controllers
+- Provides interactive UI for testing endpoints
+- Supports authentication configuration, XML comments
+</details>
+
+<details>
+<summary>217. How do you document APIs with XML comments and Swagger?</summary>
+
+**Enable XML documentation in .csproj:**
+```xml
+<PropertyGroup>
+  <GenerateDocumentationFile>true</GenerateDocumentationFile>
+</PropertyGroup>
+```
+
+**Configure Swagger:**
+```csharp
+services.AddSwaggerGen(c =>
+{
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    c.IncludeXmlComments(xmlPath);
+});
+```
+
+**Add XML comments to controllers:**
+```csharp
+/// <summary>
+/// Creates a new product.
+/// </summary>
+/// <param name="product">The product to create</param>
+/// <returns>The created product</returns>
+/// <response code="201">Returns the newly created product</response>
+/// <response code="400">If the product is invalid</response>
+[HttpPost]
+[ProducesResponseType(StatusCodes.Status201Created)]
+[ProducesResponseType(StatusCodes.Status400BadRequest)]
+public ActionResult<Product> Create(Product product) { }
+```
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><strong>SOLID Principles</strong></summary>
+
+<details>
+<summary>218. What are the SOLID principles?</summary>
+
+- **S**ingle Responsibility Principle: a class should have one reason to change
+- **O**pen/Closed Principle: open for extension, closed for modification
+- **L**iskov Substitution Principle: subtypes must be substitutable for base types
+- **I**nterface Segregation Principle: prefer small, specific interfaces
+- **D**ependency Inversion Principle: depend on abstractions, not concretions
+- Goal: maintainable, testable, flexible code
+</details>
+
+<details>
+<summary>219. What is the Dependency Inversion Principle (the "D" in SOLID)?</summary>
+
+- High-level modules should not depend on low-level modules
+- Both should depend on abstractions (interfaces)
+- Abstractions should not depend on details; details depend on abstractions
+```csharp
+// Wrong: high-level depends on low-level
+public class OrderService
+{
+    private readonly SqlDatabase _database = new SqlDatabase();
+}
+
+// Right: both depend on abstraction
+public class OrderService
+{
+    private readonly IDatabase _database;
+    public OrderService(IDatabase database) => _database = database;
+}
+```
+- Enables testability, flexibility, and loose coupling
+</details>
+
+<details>
+<summary>220. Can you give examples of each SOLID principle violation and fix?</summary>
+
+**Single Responsibility** - violation: class handles both user logic and email sending
+```csharp
+// Fix: separate EmailService class
+```
+
+**Open/Closed** - violation: modifying switch statement for new types
+```csharp
+// Fix: use polymorphism or strategy pattern
+```
+
+**Liskov Substitution** - violation: Square inheriting from Rectangle breaks area calculation
+```csharp
+// Fix: common interface IShape instead of inheritance
+```
+
+**Interface Segregation** - violation: IWorker with Work() and Eat() methods
+```csharp
+// Fix: separate IWorkable and IFeedable interfaces
+```
+
+**Dependency Inversion** - violation: directly instantiating dependencies
+```csharp
+// Fix: inject abstractions via constructor
+```
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><strong>Monoliths vs Microservices</strong></summary>
+
+<details>
+<summary>221. What are the key differences between monolithic and microservice architectures?</summary>
+
+| Aspect | Monolith | Microservices |
+|--------|----------|---------------|
+| Deployment | Single unit | Independent services |
+| Scaling | Scale entire app | Scale individual services |
+| Tech stack | Usually uniform | Polyglot possible |
+| Data | Shared database | Database per service |
+| Team structure | One team, all code | Small teams per service |
+| Complexity | Simpler initially | Distributed systems complexity |
+| Communication | In-process calls | Network calls (HTTP, messaging) |
+</details>
+
+<details>
+<summary>222. When should you choose monolith vs microservices?</summary>
+
+**Monolith when:**
+- Small team or early-stage startup
+- Simple domain, well-understood requirements
+- Need quick delivery, low operational overhead
+- Tight budget for infrastructure
+
+**Microservices when:**
+- Large teams needing autonomy
+- Different scaling requirements per component
+- High availability requirements
+- Need for independent deployments
+- Complex, well-bounded domains
+</details>
+
+<details>
+<summary>223. What problems did you encounter with microservices architecture?</summary>
+
+- **Distributed system complexity**: network failures, latency
+- **Data consistency**: eventual consistency, distributed transactions
+- **Service discovery**: how services find each other
+- **Debugging**: tracing requests across services
+- **Deployment complexity**: orchestration, versioning
+- **Testing**: integration testing across services
+- **Operational overhead**: monitoring, logging aggregation
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><strong>Dependency Injection</strong></summary>
+
+<details>
+<summary>224. What is Dependency Injection and why use it?</summary>
+
+- Design pattern where dependencies are provided ("injected") rather than created
+- Benefits:
+  - Loose coupling between components
+  - Easier unit testing (mock dependencies)
+  - Centralized configuration of dependencies
+  - Supports SOLID principles (especially D)
+- Types: constructor injection, property injection, method injection
+- Constructor injection is preferred (explicit, immutable)
+</details>
+
+<details>
+<summary>225. What are the DI service lifetimes in ASP.NET Core?</summary>
+
+| Lifetime | Behavior | Use Case |
+|----------|----------|----------|
+| **Transient** | New instance every request | Lightweight, stateless services |
+| **Scoped** | One instance per HTTP request | DbContext, unit of work |
+| **Singleton** | One instance for app lifetime | Caching, configuration, logging |
+
+```csharp
+services.AddTransient<IEmailService, EmailService>();
+services.AddScoped<IOrderRepository, OrderRepository>();
+services.AddSingleton<ICacheService, CacheService>();
+```
+</details>
+
+<details>
+<summary>226. What are the differences and potential issues with each DI lifetime?</summary>
+
+**Transient:**
+- Most flexible, no shared state
+- Can be memory intensive if heavy to create
+
+**Scoped:**
+- Shared within request boundary
+- Cannot inject into Singleton (captive dependency)
+
+**Singleton:**
+- Must be thread-safe
+- Cannot inject Scoped or Transient services
+- State persists for app lifetime (memory leaks possible)
+
+**Captive dependency problem:**
+```csharp
+// WRONG: Singleton capturing Scoped service
+public class SingletonService
+{
+    public SingletonService(ScopedService scoped) { } // Bug!
+}
+```
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><strong>Singleton Pattern</strong></summary>
+
+<details>
+<summary>227. What is the Singleton pattern and how do you implement it thread-safely?</summary>
+
+- Ensures only one instance of a class exists
+- Provides global access point
+
+**Thread-safe implementations:**
+```csharp
+// 1. Lazy<T> (recommended)
+public sealed class Singleton
+{
+    private static readonly Lazy<Singleton> _instance = 
+        new Lazy<Singleton>(() => new Singleton());
+    public static Singleton Instance => _instance.Value;
+    private Singleton() { }
+}
+
+// 2. Static constructor (also thread-safe)
+public sealed class Singleton
+{
+    public static Singleton Instance { get; } = new Singleton();
+    private Singleton() { }
+}
+
+// 3. Double-check locking (explicit)
+private static volatile Singleton _instance;
+private static readonly object _lock = new object();
+
+public static Singleton Instance
+{
+    get
+    {
+        if (_instance == null)
+        {
+            lock (_lock)
+            {
+                if (_instance == null)
+                    _instance = new Singleton();
+            }
+        }
+        return _instance;
+    }
+}
+```
+</details>
+
+<details>
+<summary>228. What multithreading problems have you encountered with Singleton?</summary>
+
+- **Race conditions**: multiple threads creating instances simultaneously
+- **State corruption**: concurrent modifications to singleton state
+- **Deadlocks**: if singleton initialization acquires locks
+
+**Solutions:**
+- Use thread-safe initialization (Lazy<T>, static constructor)
+- Make singleton immutable or stateless if possible
+- Use proper synchronization for mutable state
+- Consider ConcurrentDictionary for thread-safe collections
+- Avoid singleton altogether; prefer DI with managed lifetimes
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><strong>SQL Performance and Debugging</strong></summary>
+
+<details>
+<summary>229. What tools do you use to find SQL-related performance issues?</summary>
+
+**SQL Server:**
+- SQL Server Profiler / Extended Events
+- Query Store (built-in performance history)
+- Execution Plans (SSMS, Azure Data Studio)
+- Dynamic Management Views (DMVs)
+- Activity Monitor
+
+**Application-level:**
+- EF Core logging (`optionsBuilder.LogTo(Console.WriteLine)`)
+- MiniProfiler for real-time query timing
+- Application Insights / OpenTelemetry
+- Third-party APM tools (Datadog, New Relic)
+
+**Metrics to look for:**
+- Query duration, CPU time, logical reads
+- Missing indexes, index scans vs seeks
+- Parameter sniffing issues
+</details>
+
+<details>
+<summary>230. What are SQL performance best practices?</summary>
+
+- **Indexing**: create indexes on WHERE, JOIN, ORDER BY columns
+- **Avoid SELECT ***: retrieve only needed columns
+- **Parameterized queries**: prevent SQL injection, enable plan reuse
+- **Batch operations**: avoid row-by-row processing
+- **Pagination**: use OFFSET/FETCH or keyset pagination
+- **Avoid N+1**: use JOINs or eager loading
+- **Statistics**: keep statistics updated
+- **Query analysis**: review execution plans regularly
+- **Connection pooling**: reuse database connections
+- **Consider read replicas**: for read-heavy workloads
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><strong>Async/Await Deep Dive</strong></summary>
+
+<details>
+<summary>231. What happens if you forget to write await?</summary>
+
+```csharp
+// Forgot await
+public async Task ProcessAsync()
+{
+    SaveToDatabase(); // Returns Task, but we don't wait!
+    Console.WriteLine("Done"); // Executes immediately
+}
+```
+
+**Consequences:**
+- Method continues without waiting for completion
+- Exceptions are swallowed (not observed)
+- Fire-and-forget behavior (usually unintended)
+- Data inconsistency possible
+- Compiler warning CS4014
+
+**Fix:** Always await, or explicitly handle fire-and-forget:
+```csharp
+_ = Task.Run(() => FireAndForget()).ContinueWith(t => 
+    Log.Error(t.Exception), TaskContinuationOptions.OnlyOnFaulted);
+```
+</details>
+
+<details>
+<summary>232. How does async/await know when an async operation has completed?</summary>
+
+**State machine mechanics:**
+1. Compiler transforms async method into state machine class
+2. `await` captures current state and registers continuation
+3. Awaitable object (Task) has `IsCompleted` property checked
+4. If not complete, `OnCompleted` callback is registered
+5. When I/O completes, OS signals thread pool
+6. Continuation is scheduled on appropriate context
+7. State machine resumes from saved state
+
+**Task completion sources:**
+- I/O completion ports (Windows)
+- epoll/kqueue (Linux/macOS)
+- `TaskCompletionSource<T>` for manual control
+</details>
+
+<details>
+<summary>233. What is the UI thread and SynchronizationContext?</summary>
+
+**UI Thread:**
+- Single thread that can modify UI elements
+- All UI frameworks (WPF, WinForms, MAUI) are single-threaded
+- Blocking UI thread = frozen app
+
+**SynchronizationContext:**
+- Abstraction for marshaling work to specific thread/context
+- UI frameworks provide custom implementations
+- Captured by `await` to continue on original context
+
+```csharp
+// UI app example
+async void Button_Click(object sender, EventArgs e)
+{
+    label.Text = "Loading...";          // UI thread
+    var data = await FetchDataAsync();   // Background thread
+    label.Text = data;                   // Back to UI thread (automatic)
+}
+```
+</details>
+
+<details>
+<summary>234. What is ConfigureAwait and when should you use it?</summary>
+
+```csharp
+await SomeAsync().ConfigureAwait(false);
+```
+
+**ConfigureAwait(true)** (default):
+- Continue on captured SynchronizationContext
+- Required for UI updates in desktop/mobile apps
+
+**ConfigureAwait(false)**:
+- Don't capture context, continue on any thread pool thread
+- **Use in library code** to avoid deadlocks
+- Improves performance (no context switching)
+
+**Best practice:**
+- UI code: use default or `ConfigureAwait(true)`
+- Library code: always use `ConfigureAwait(false)`
+- ASP.NET Core has no SynchronizationContext, so it doesn't matter (but good habit)
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><strong>CAP Theorem</strong></summary>
+
+<details>
+<summary>235. What is the CAP theorem?</summary>
+
+In a distributed system, you can only guarantee two of three:
+
+- **Consistency**: every read receives the most recent write
+- **Availability**: every request receives a response
+- **Partition tolerance**: system continues despite network failures
+
+**In practice:**
+- Network partitions will happen (P is mandatory)
+- Choice is between C and A during partition
+- CP systems: favor consistency (refuse requests if unsure)
+- AP systems: favor availability (allow stale reads)
+
+**Examples:**
+- CP: MongoDB, HBase, Redis Cluster
+- AP: Cassandra, DynamoDB, CouchDB
+</details>
+
+<details>
+<summary>236. How does CAP theorem affect microservice design?</summary>
+
+- **Accept eventual consistency**: not all data needs strong consistency
+- **Design for partition tolerance**: network will fail
+- **Choose based on use case**:
+  - Financial transactions: prefer consistency
+  - Social media feed: availability more important
+- **Implement compensating transactions**: SAGA pattern
+- **Use idempotent operations**: safe to retry
+- **Design for graceful degradation**: circuit breakers
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><strong>SAGA Pattern</strong></summary>
+
+<details>
+<summary>237. What is the SAGA pattern?</summary>
+
+- Pattern for managing distributed transactions across microservices
+- Alternative to two-phase commit (2PC)
+- Sequence of local transactions with compensating actions
+
+**Types:**
+- **Choreography**: services publish events, others react
+- **Orchestration**: central coordinator manages saga
+
+**Example** (Order processing):
+1. Order Service: Create order → CompensatIng: Cancel order
+2. Payment Service: Charge payment → Compensating: Refund payment
+3. Inventory Service: Reserve stock → Compensating: Release stock
+4. Shipping Service: Schedule delivery
+</details>
+
+<details>
+<summary>238. What are the pros and cons of SAGA choreography vs orchestration?</summary>
+
+**Choreography:**
+```
+Order Created → Payment Charged → Stock Reserved → Shipping Scheduled
+     ↓               ↓                ↓
+  (events)       (events)         (events)
+```
+- **Pros**: decoupled, no single point of failure
+- **Cons**: hard to understand flow, difficult debugging
+
+**Orchestration:**
+```
+Orchestrator → Order Service
+            → Payment Service
+            → Inventory Service
+            → Shipping Service
+```
+- **Pros**: clear flow, easier testing, centralized logic
+- **Cons**: orchestrator is single point of failure, coupling
+
+**Choose based on:**
+- Complexity of workflow
+- Team structure
+- Debugging requirements
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><strong>HttpClient Best Practices</strong></summary>
+
+<details>
+<summary>239. What is socket exhaustion and how do you prevent it?</summary>
+
+**Problem:**
+```csharp
+// WRONG: creates new socket for each request
+using (var client = new HttpClient())
+{
+    var result = await client.GetAsync(url);
+}
+// Socket enters TIME_WAIT state (~4 minutes), ports exhausted
+```
+
+**Solutions:**
+
+1. **IHttpClientFactory** (recommended):
+```csharp
+services.AddHttpClient<MyService>(client =>
+{
+    client.BaseAddress = new Uri("https://api.example.com");
+});
+```
+- Manages HttpMessageHandler lifetime
+- Handles DNS changes properly
+- Prevents socket exhaustion
+
+2. **Static/Singleton HttpClient**:
+```csharp
+private static readonly HttpClient _client = new HttpClient();
+```
+- Simple but doesn't handle DNS changes
+
+3. **SocketsHttpHandler** (.NET Core 2.1+):
+```csharp
+var handler = new SocketsHttpHandler
+{
+    PooledConnectionLifetime = TimeSpan.FromMinutes(2)
+};
+```
+</details>
+
+<details>
+<summary>240. How do you handle HttpClient failures and resilience?</summary>
+
+**Using Polly with IHttpClientFactory:**
+```csharp
+services.AddHttpClient<MyService>()
+    .AddTransientHttpErrorPolicy(policy => 
+        policy.WaitAndRetryAsync(3, retryAttempt => 
+            TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))
+    .AddTransientHttpErrorPolicy(policy =>
+        policy.CircuitBreakerAsync(5, TimeSpan.FromSeconds(30)));
+```
+
+**Common patterns:**
+- **Retry**: retry failed requests with exponential backoff
+- **Circuit breaker**: stop calling failing service temporarily
+- **Timeout**: don't wait forever
+- **Fallback**: return cached/default data on failure
+
+**What to handle:**
+- Network timeouts
+- 5xx server errors
+- Rate limiting (429)
+- DNS failures
+</details>
+
+<details>
+<summary>241. What libraries have you used for HTTP communication?</summary>
+
+- **HttpClient**: built-in, recommended with IHttpClientFactory
+- **RestSharp**: popular REST client, simpler API
+- **Refit**: type-safe REST client using interfaces
+- **Flurl**: fluent URL building and HTTP calls
+- **Polly**: resilience and transient fault handling
+
+**Refit example:**
+```csharp
+public interface IUserApi
+{
+    [Get("/users/{id}")]
+    Task<User> GetUserAsync(int id);
+}
+
+services.AddRefitClient<IUserApi>()
+    .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.com"));
+```
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><strong>Dictionary and HashSet Internals</strong></summary>
+
+<details>
+<summary>242. How does Dictionary/HashSet work internally?</summary>
+
+**Structure:**
+- Array of buckets (hash table)
+- Each bucket contains entries with same hash code (chaining)
+- Entry stores: key, value, hash code, next entry index
+
+**Operations:**
+1. **Add/Lookup**:
+   - Compute `key.GetHashCode()`
+   - Calculate bucket index: `hashCode % buckets.Length`
+   - Search chain for matching key using `Equals()`
+
+2. **Collision handling**: linked list within bucket
+
+3. **Resize**: when load factor exceeded, double size and rehash
+
+**Time complexity:**
+- Average: O(1) for Add, Remove, ContainsKey
+- Worst (all collisions): O(n)
+
+**Requirements for keys:**
+- Immutable hash code
+- Proper `GetHashCode()` and `Equals()` implementation
+</details>
+
+<details>
+<summary>243. What happens with poor hash code implementation?</summary>
+
+**Problem:**
+```csharp
+public override int GetHashCode() => 1; // All items in one bucket!
+```
+
+**Consequences:**
+- All entries in single bucket
+- O(n) lookup instead of O(1)
+- Performance degrades to linked list
+
+**Good hash code properties:**
+- Distributes evenly across integers
+- Same for equal objects
+- Uses all relevant fields
+- Fast to compute
+
+```csharp
+public override int GetHashCode() => HashCode.Combine(Name, Age);
+```
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><strong>CQRS Pattern</strong></summary>
+
+<details>
+<summary>244. What is CQRS and when would you use it?</summary>
+
+**Command Query Responsibility Segregation:**
+- Separate models for read (Query) and write (Command) operations
+- Commands: change state, return void or ID
+- Queries: return data, no side effects
+
+**Architecture:**
+```
+Commands → Write Model → Database (normalized)
+                              ↓ (sync/async)
+Queries  → Read Model  → Database (denormalized/views)
+```
+
+**Use when:**
+- Complex domain with different read/write patterns
+- High read:write ratio (optimize reads separately)
+- Event sourcing architecture
+- Need different scaling for reads vs writes
+
+**Avoid when:**
+- Simple CRUD applications
+- Small teams (additional complexity)
+</details>
+
+<details>
+<summary>245. How do you implement CQRS in practice?</summary>
+
+**Simple CQRS with MediatR:**
+```csharp
+// Command
+public record CreateOrderCommand(string Product, int Quantity) : IRequest<int>;
+
+public class CreateOrderHandler : IRequestHandler<CreateOrderCommand, int>
+{
+    public async Task<int> Handle(CreateOrderCommand cmd, CancellationToken ct)
+    {
+        var order = new Order(cmd.Product, cmd.Quantity);
+        await _repository.AddAsync(order);
+        return order.Id;
+    }
+}
+
+// Query
+public record GetOrderQuery(int Id) : IRequest<OrderDto>;
+
+public class GetOrderHandler : IRequestHandler<GetOrderQuery, OrderDto>
+{
+    public async Task<OrderDto> Handle(GetOrderQuery query, CancellationToken ct)
+    {
+        return await _readDb.Orders.FirstOrDefaultAsync(o => o.Id == query.Id);
+    }
+}
+```
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><strong>Design Patterns</strong></summary>
+
+<details>
+<summary>246. What design patterns have you used in your work?</summary>
+
+**Creational:**
+- Factory: create objects without exposing creation logic
+- Builder: construct complex objects step by step
+- Singleton: single instance (prefer DI)
+
+**Structural:**
+- Adapter: make incompatible interfaces work together
+- Decorator: add behavior dynamically
+- Facade: simplify complex subsystem
+
+**Behavioral:**
+- Strategy: encapsulate algorithms, make them interchangeable
+- Observer: notify dependents of state changes
+- Command: encapsulate request as object (CQRS)
+- Template Method: define algorithm skeleton, let subclasses override steps
+</details>
+
+<details>
+<summary>247. Can you explain Strategy pattern with a practical example?</summary>
+
+```csharp
+// Strategy interface
+public interface IPaymentStrategy
+{
+    Task<PaymentResult> ProcessAsync(decimal amount);
+}
+
+// Concrete strategies
+public class CreditCardPayment : IPaymentStrategy
+{
+    public async Task<PaymentResult> ProcessAsync(decimal amount)
+    {
+        // Credit card processing logic
+    }
+}
+
+public class PayPalPayment : IPaymentStrategy
+{
+    public async Task<PaymentResult> ProcessAsync(decimal amount)
+    {
+        // PayPal processing logic
+    }
+}
+
+// Context
+public class PaymentService
+{
+    public async Task<PaymentResult> ProcessPaymentAsync(
+        IPaymentStrategy strategy, decimal amount)
+    {
+        return await strategy.ProcessAsync(amount);
+    }
+}
+
+// Usage - strategy selected at runtime
+var strategy = paymentType switch
+{
+    "creditcard" => new CreditCardPayment(),
+    "paypal" => new PayPalPayment(),
+    _ => throw new NotSupportedException()
+};
+await paymentService.ProcessPaymentAsync(strategy, 100.00m);
+```
+</details>
+
+<details>
+<summary>248. What is the Repository pattern and when should you use it?</summary>
+
+```csharp
+public interface IRepository<T> where T : class
+{
+    Task<T?> GetByIdAsync(int id);
+    Task<IEnumerable<T>> GetAllAsync();
+    Task AddAsync(T entity);
+    Task UpdateAsync(T entity);
+    Task DeleteAsync(T entity);
+}
+
+public class OrderRepository : IRepository<Order>
+{
+    private readonly AppDbContext _context;
+    
+    public async Task<Order?> GetByIdAsync(int id)
+        => await _context.Orders.FindAsync(id);
+    // ... other implementations
+}
+```
+
+**Benefits:**
+- Abstracts data access
+- Enables unit testing with mock repositories
+- Centralizes query logic
+
+**Debate:**
+- EF Core DbContext is already Unit of Work + Repository
+- Adding another layer may be unnecessary abstraction
+- Consider: Specification pattern for complex queries
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><strong>Message Queues and Brokers</strong></summary>
+
+<details>
+<summary>249. What message queue technologies have you used?</summary>
+
+**Message brokers:**
+- **RabbitMQ**: powerful routing, AMQP protocol
+- **Azure Service Bus**: managed, enterprise features
+- **Amazon SQS/SNS**: AWS managed queues
+- **Apache Kafka**: high-throughput, log-based
+
+**.NET libraries:**
+- **MassTransit**: abstraction over RabbitMQ, Azure Service Bus, Amazon SQS
+- **NServiceBus**: enterprise service bus
+- **CAP**: distributed transaction with outbox pattern
+- **Wolverine**: next-gen messaging (successor to Jasper)
+
+```csharp
+// MassTransit example
+services.AddMassTransit(x =>
+{
+    x.AddConsumer<OrderConsumer>();
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.ConfigureEndpoints(context);
+    });
+});
+```
+</details>
+
+<details>
+<summary>250. When should you use message queues vs direct HTTP calls?</summary>
+
+**Use message queues when:**
+- Asynchronous processing is acceptable
+- Need to handle spikes (load leveling)
+- Want guaranteed delivery
+- Decoupling services is important
+- Long-running operations
+
+**Use HTTP when:**
+- Need immediate response
+- Simple request/response pattern
+- Real-time requirements
+- Simpler infrastructure needs
+
+**Patterns:**
+- Command messages: tell service to do something
+- Event messages: notify something happened
+- Request/Reply: synchronous over async transport
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><strong>Logging Best Practices</strong></summary>
+
+<details>
+<summary>251. How do you implement logging in .NET applications?</summary>
+
+**Using Microsoft.Extensions.Logging:**
+```csharp
+public class OrderService
+{
+    private readonly ILogger<OrderService> _logger;
+    
+    public OrderService(ILogger<OrderService> logger)
+    {
+        _logger = logger;
+    }
+    
+    public void ProcessOrder(Order order)
+    {
+        _logger.LogInformation("Processing order {OrderId}", order.Id);
+        
+        try
+        {
+            // Process
+            _logger.LogDebug("Order {OrderId} details: {@Order}", order.Id, order);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to process order {OrderId}", order.Id);
+            throw;
+        }
+    }
+}
+```
+
+**Best practices:**
+- Use structured logging with message templates
+- Include correlation IDs for distributed tracing
+- Log appropriate levels (Debug, Info, Warning, Error)
+- Don't log sensitive data (PII, passwords)
+</details>
+
+<details>
+<summary>252. What logging providers and tools have you used?</summary>
+
+**Providers:**
+- Console (development)
+- Serilog (structured logging)
+- NLog (flexible configuration)
+- Application Insights (Azure)
+- Seq (log server)
+- ELK Stack (Elasticsearch, Logstash, Kibana)
+
+**Serilog configuration:**
+```csharp
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .WriteTo.Console()
+    .WriteTo.File("logs/app-.log", rollingInterval: RollingInterval.Day)
+    .WriteTo.Seq("http://localhost:5341")
+    .Enrich.WithCorrelationId()
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+```
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><strong>Multithreading and Asynchrony</strong></summary>
+
+<details>
+<summary>253. What is the difference between multithreading and asynchrony?</summary>
+
+**Multithreading:**
+- Multiple threads executing code simultaneously
+- Uses CPU parallelism
+- For CPU-bound work (calculations, processing)
+- Thread pool manages worker threads
+
+**Asynchrony:**
+- Non-blocking operations
+- Single thread can handle many operations
+- For I/O-bound work (database, HTTP, file system)
+- No thread is blocked waiting
+
+```csharp
+// CPU-bound: use Parallel or Task.Run
+Parallel.For(0, 1000, i => Calculate(i));
+
+// I/O-bound: use async/await
+var data = await httpClient.GetStringAsync(url);
+```
+
+**Key insight:** async doesn't create threads; it frees them
+</details>
+
+<details>
+<summary>254. What synchronization primitives do you use for thread safety?</summary>
+
+| Primitive | Use Case |
+|-----------|----------|
+| `lock` | Simple mutual exclusion |
+| `SemaphoreSlim` | Limit concurrent access, async-compatible |
+| `ReaderWriterLockSlim` | Multiple readers, single writer |
+| `Interlocked` | Atomic operations on primitives |
+| `ConcurrentDictionary` | Thread-safe dictionary |
+| `Channel<T>` | Producer-consumer with async |
+
+```csharp
+// SemaphoreSlim for async limiting
+private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(10);
+
+public async Task ProcessAsync()
+{
+    await _semaphore.WaitAsync();
+    try
+    {
+        await DoWorkAsync();
+    }
+    finally
+    {
+        _semaphore.Release();
+    }
+}
+```
+</details>
+
+<details>
+<summary>255. Can you describe a concrete performance issue you solved?</summary>
+
+**Example scenario:** API endpoint timing out under load
+
+**Investigation:**
+1. Profiled with Application Insights, found slow database queries
+2. Analyzed execution plans, discovered missing index
+3. Found N+1 query problem (lazy loading in loop)
+4. Identified synchronous I/O blocking thread pool
+
+**Solutions applied:**
+1. Added appropriate indexes
+2. Changed to eager loading with `Include()`
+3. Replaced `.Result` calls with proper `await`
+4. Implemented caching for frequently accessed data
+5. Added pagination to large result sets
+
+**Result:** Response time from 5s to 200ms, 10x throughput improvement
+</details>
+
+</details>
