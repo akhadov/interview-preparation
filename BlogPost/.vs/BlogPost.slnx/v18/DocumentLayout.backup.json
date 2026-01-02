@@ -1,0 +1,134 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Shakhriyor.Akhadov\\Desktop\\interview\\BlogPost\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{BDCABB05-A2DE-C3C4-D1E8-646C0932F3B5}|BlogPost.Api\\BlogPost.Api.csproj|c:\\users\\shakhriyor.akhadov\\desktop\\interview\\blogpost\\blogpost.api\\data\\blogscontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BDCABB05-A2DE-C3C4-D1E8-646C0932F3B5}|BlogPost.Api\\BlogPost.Api.csproj|solutionrelative:blogpost.api\\data\\blogscontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BDCABB05-A2DE-C3C4-D1E8-646C0932F3B5}|BlogPost.Api\\BlogPost.Api.csproj|c:\\users\\shakhriyor.akhadov\\desktop\\interview\\blogpost\\blogpost.api\\entities\\blogentity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BDCABB05-A2DE-C3C4-D1E8-646C0932F3B5}|BlogPost.Api\\BlogPost.Api.csproj|solutionrelative:blogpost.api\\entities\\blogentity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\18\\Insiders\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BDCABB05-A2DE-C3C4-D1E8-646C0932F3B5}|BlogPost.Api\\BlogPost.Api.csproj|c:\\users\\shakhriyor.akhadov\\desktop\\interview\\blogpost\\blogpost.api\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{BDCABB05-A2DE-C3C4-D1E8-646C0932F3B5}|BlogPost.Api\\BlogPost.Api.csproj|solutionrelative:blogpost.api\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BDCABB05-A2DE-C3C4-D1E8-646C0932F3B5}|BlogPost.Api\\BlogPost.Api.csproj|c:\\users\\shakhriyor.akhadov\\desktop\\interview\\blogpost\\blogpost.api\\appsettings.development.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{BDCABB05-A2DE-C3C4-D1E8-646C0932F3B5}|BlogPost.Api\\BlogPost.Api.csproj|solutionrelative:blogpost.api\\appsettings.development.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BDCABB05-A2DE-C3C4-D1E8-646C0932F3B5}|BlogPost.Api\\BlogPost.Api.csproj|c:\\users\\shakhriyor.akhadov\\desktop\\interview\\blogpost\\blogpost.api\\entities\\postentity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BDCABB05-A2DE-C3C4-D1E8-646C0932F3B5}|BlogPost.Api\\BlogPost.Api.csproj|solutionrelative:blogpost.api\\entities\\postentity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BDCABB05-A2DE-C3C4-D1E8-646C0932F3B5}|BlogPost.Api\\BlogPost.Api.csproj|c:\\users\\shakhriyor.akhadov\\desktop\\interview\\blogpost\\blogpost.api\\migrations\\20251225052019_create_database.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BDCABB05-A2DE-C3C4-D1E8-646C0932F3B5}|BlogPost.Api\\BlogPost.Api.csproj|solutionrelative:blogpost.api\\migrations\\20251225052019_create_database.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 4,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Microsoft.Common.CurrentVersion.targets",
+              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\18\\Insiders\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\18\\Insiders\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
+              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\18\\Insiders\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\18\\Insiders\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
+              "ViewState": "AgIAAA4VAAAAAAAAAAAQwBQVAAAGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003801|",
+              "WhenOpened": "2025-12-25T05:45:50.575Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "launchSettings.json",
+              "DocumentMoniker": "C:\\Users\\Shakhriyor.Akhadov\\Desktop\\interview\\BlogPost\\BlogPost.Api\\Properties\\launchSettings.json",
+              "RelativeDocumentMoniker": "BlogPost.Api\\Properties\\launchSettings.json",
+              "ToolTip": "C:\\Users\\Shakhriyor.Akhadov\\Desktop\\interview\\BlogPost\\BlogPost.Api\\Properties\\launchSettings.json",
+              "RelativeToolTip": "BlogPost.Api\\Properties\\launchSettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-12-25T05:23:07.581Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "20251225052019_Create_Database.cs",
+              "DocumentMoniker": "C:\\Users\\Shakhriyor.Akhadov\\Desktop\\interview\\BlogPost\\BlogPost.Api\\Migrations\\20251225052019_Create_Database.cs",
+              "RelativeDocumentMoniker": "BlogPost.Api\\Migrations\\20251225052019_Create_Database.cs",
+              "ToolTip": "C:\\Users\\Shakhriyor.Akhadov\\Desktop\\interview\\BlogPost\\BlogPost.Api\\Migrations\\20251225052019_Create_Database.cs",
+              "RelativeToolTip": "BlogPost.Api\\Migrations\\20251225052019_Create_Database.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-25T05:20:19.854Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "appsettings.Development.json",
+              "DocumentMoniker": "C:\\Users\\Shakhriyor.Akhadov\\Desktop\\interview\\BlogPost\\BlogPost.Api\\appsettings.Development.json",
+              "RelativeDocumentMoniker": "BlogPost.Api\\appsettings.Development.json",
+              "ToolTip": "C:\\Users\\Shakhriyor.Akhadov\\Desktop\\interview\\BlogPost\\BlogPost.Api\\appsettings.Development.json",
+              "RelativeToolTip": "BlogPost.Api\\appsettings.Development.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAyAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-12-24T11:39:22.52Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "BlogsContext.cs",
+              "DocumentMoniker": "C:\\Users\\Shakhriyor.Akhadov\\Desktop\\interview\\BlogPost\\BlogPost.Api\\Data\\BlogsContext.cs",
+              "RelativeDocumentMoniker": "BlogPost.Api\\Data\\BlogsContext.cs",
+              "ToolTip": "C:\\Users\\Shakhriyor.Akhadov\\Desktop\\interview\\BlogPost\\BlogPost.Api\\Data\\BlogsContext.cs*",
+              "RelativeToolTip": "BlogPost.Api\\Data\\BlogsContext.cs*",
+              "ViewState": "AgIAAFUAAAAAAAAAAAAmwFkAAAAeAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-24T10:59:10.637Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "BlogEntity.cs",
+              "DocumentMoniker": "C:\\Users\\Shakhriyor.Akhadov\\Desktop\\interview\\BlogPost\\BlogPost.Api\\Entities\\BlogEntity.cs",
+              "RelativeDocumentMoniker": "BlogPost.Api\\Entities\\BlogEntity.cs",
+              "ToolTip": "C:\\Users\\Shakhriyor.Akhadov\\Desktop\\interview\\BlogPost\\BlogPost.Api\\Entities\\BlogEntity.cs",
+              "RelativeToolTip": "BlogPost.Api\\Entities\\BlogEntity.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-22T11:51:14.863Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "PostEntity.cs",
+              "DocumentMoniker": "C:\\Users\\Shakhriyor.Akhadov\\Desktop\\interview\\BlogPost\\BlogPost.Api\\Entities\\PostEntity.cs",
+              "RelativeDocumentMoniker": "BlogPost.Api\\Entities\\PostEntity.cs",
+              "ToolTip": "C:\\Users\\Shakhriyor.Akhadov\\Desktop\\interview\\BlogPost\\BlogPost.Api\\Entities\\PostEntity.cs",
+              "RelativeToolTip": "BlogPost.Api\\Entities\\PostEntity.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-22T11:45:38.983Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
