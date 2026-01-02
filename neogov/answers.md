@@ -162,7 +162,7 @@ SELECT COUNT(1) FROM dbo.Orders o OUTER APPLY (SELECT * FROM dbo.OrderDetails od
 ```
 
 ### Question 3: SELECT INTO Properties
-**Answer: A, C**
+**Answer: A, C, E**
 `SELECT INTO` creates a new table with the same schema and data, but does **not** copy indexes, primary keys, or constraints (except for IDENTITY).
 ```sql
 SELECT * INTO dbo.Employees2 FROM dbo.Employees;
@@ -170,7 +170,7 @@ SELECT * INTO dbo.Employees2 FROM dbo.Employees;
 ```
 
 ### Question 4: View WITH CHECK OPTION
-**Answer: C**
+**Answer: A**
 `WITH CHECK OPTION` prevents users from updating or inserting rows through the view that would not be visible in the view.
 ```sql
 CREATE VIEW dbo.EmployeesFromLondon AS
@@ -180,7 +180,7 @@ WITH CHECK OPTION;
 ```
 
 ### Question 5: Update with Join/Exists
-**Answer: C, D**
+**Answer: A, B, C, D**
 Both syntaxes are valid in SQL Server for updating based on related tables.
 ```sql
 -- Using JOIN
@@ -195,7 +195,7 @@ WHERE EXISTS (SELECT 1 FROM dbo.Orders o WHERE o.OrderId = od.OrderId AND o.Empl
 ```
 
 ### Question 6: Merge OUTPUT
-**Answer: D**
+**Answer: B, and maybe D**
 The `OUTPUT` clause in a `MERGE` statement can capture the `$action` and values from both `Inserted` and `Deleted` tables.
 ```sql
 MERGE dbo.Employees2 AS target ...
