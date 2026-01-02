@@ -2,19 +2,19 @@ import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 interface User {
-    id: number;
-    firstName: string;
-    lastName: string;
+  id: number;
+  firstName: string;
+  lastName: string;
 }
 
 interface ApiResponse {
-    count: number;
-    results: User[];
+  count: number;
+  results: User[];
 }
 
 @Component({
-    selector: 'app-task1',
-    template: `
+  selector: 'app-task1',
+  template: `
     <table class="table">
       <thead>
         <tr>
@@ -61,65 +61,65 @@ interface ApiResponse {
   `
 })
 export default class Task1Component implements OnInit {
-    private readonly API_URL = 'https://example.com/api/users';
-    private readonly PAGE_SIZE = 10;
+  private readonly API_URL = 'https://example.com/api/users';
+  private readonly PAGE_SIZE = 10;
 
-    users: User[] = [];
-    currentPage = 0;
-    totalCount = 0;
-    isLoading = false;
+  users: User[] = [];
+  currentPage = 0;
+  totalCount = 0;
+  isLoading = false;
 
-    constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) { }
 
-    ngOnInit(): void {
-        this.fetchPage(0);
+  ngOnInit(): void {
+    this.fetchPage(0);
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.totalCount / this.PAGE_SIZE);
+  }
+
+  get isFirstPage(): boolean {
+    return this.currentPage === 0;
+  }
+
+  get isLastPage(): boolean {
+    return this.currentPage >= this.totalPages - 1;
+  }
+
+  navigateToFirst(): void {
+    this.fetchPage(0);
+  }
+
+  navigateToPrevious(): void {
+    this.fetchPage(this.currentPage - 1);
+  }
+
+  navigateToNext(): void {
+    this.fetchPage(this.currentPage + 1);
+  }
+
+  navigateToLast(): void {
+    this.fetchPage(this.totalPages - 1);
+  }
+
+  private fetchPage(page: number): void {
+    if (this.isLoading || page < 0) {
+      return;
     }
 
-    get totalPages(): number {
-        return Math.ceil(this.totalCount / this.PAGE_SIZE);
-    }
+    this.isLoading = true;
 
-    get isFirstPage(): boolean {
-        return this.currentPage === 0;
-    }
-
-    get isLastPage(): boolean {
-        return this.currentPage >= this.totalPages - 1;
-    }
-
-    navigateToFirst(): void {
-        this.fetchPage(0);
-    }
-
-    navigateToPrevious(): void {
-        this.fetchPage(this.currentPage - 1);
-    }
-
-    navigateToNext(): void {
-        this.fetchPage(this.currentPage + 1);
-    }
-
-    navigateToLast(): void {
-        this.fetchPage(this.totalPages - 1);
-    }
-
-    private fetchPage(page: number): void {
-        if (this.isLoading || page < 0) {
-            return;
-        }
-
-        this.isLoading = true;
-
-        this.http.get<ApiResponse>(`${this.API_URL}?page=${page}`).subscribe({
-            next: (response) => {
-                this.users = response.results;
-                this.totalCount = response.count;
-                this.currentPage = page;
-                this.isLoading = false;
-            },
-            error: () => {
-                this.isLoading = false;
-            }
-        });
-    }
+    this.http.get<ApiResponse>(`${this.API_URL}?page=${page}`).subscribe({
+      next: (response) => {
+        this.users = response.results;
+        this.totalCount = response.count;
+        this.currentPage = page;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.isLoading = false;
+      }
+    });
+  }
 }
